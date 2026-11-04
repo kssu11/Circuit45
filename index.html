@@ -111,6 +111,8 @@ ul.tight{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:4px}
 .cite{font-size:12px;color:var(--accent);vertical-align:super;font-weight:600}
 .refs li{font-size:13px;color:var(--muted)}
 .tempo{font-size:13px;color:var(--muted)}
+.ytbox{background:var(--bg);border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:6px}
+.p-yt{font-size:13.5px;max-width:460px;background:rgba(0,0,0,.2);border-radius:10px;padding:6px 10px}
 .tempo b{color:var(--ink);font-family:var(--display);font-size:16px}
 table.log{width:100%;border-collapse:collapse;font-size:13px}
 table.log th,table.log td{text-align:left;padding:7px 6px;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums}
@@ -328,6 +330,7 @@ table.log th,table.log td{text-align:left;padding:7px 6px;border-bottom:1px soli
     <div class="p-time" id="pTime">0:45</div>
     <div class="p-hr" id="pHr"></div>
     <div class="p-cue" id="pCue"></div>
+    <div class="p-yt" id="pYt" hidden></div>
     <div class="p-next" id="pNext"></div>
   </div>
   <div class="p-ctl">
@@ -493,7 +496,7 @@ const E={
  // mat zone
  sidePlank:{n:'Side plank',k:'사이드 플랭크',zone:'mat',img:1,tp:null,tt:'정지 · 짧게 호흡',side:1,
   cue:['팔꿈치는 어깨 바로 아래, 머리–골반–발 일직선','골반이 처지거나 뒤로 빠지지 않게','쉬우면 위쪽 다리를 들어 hip abduction 추가 (gluteus medius ↑)'],mus:'Gluteus medius, Obliques, Quadratus lumborum',alt:'무릎 대고 side plank'},
- gluteBridge:{n:'Glute bridge',k:'글루트 브릿지',zone:'mat',anchor:'hip',cx:68,tp:[1,1,1.5,.3],tt:'올리기 1초 · 정점 1초 · 내리기 1.5초',
+ gluteBridge:{n:'Glute bridge',k:'글루트 브릿지',zone:'mat',anchor:'hip',cx:68,tp:[1,2,1.5,.3],tt:'올리기 1초 · 정점 2초 · 내리기 1.5초',
   a:P(180,-45,80,-42,82,0,0,2,0,{hd:180}),b:P(160,-20,95,-18,97,0,0,2,0,{hd:180}),
   cue:['발뒤꿈치로 밀고 정점에서 1초 squeeze','허리 과신전 말고 갈비뼈 내리기'],mus:'Gluteus maximus, Hamstrings',alt:'Single-leg bridge'},
  squatJump:{n:'Squat jump',k:'스쿼트 점프',zone:'mat',anchor:'foot',cx:58,tp:[.35,.25,.5,.3],tt:'1회 ~1.4초',
@@ -540,6 +543,8 @@ const E={
   cue:['무릎 모으고 골반 뒤로 말기','좌우 30초씩'],mus:'Rectus femoris, Vastus',alt:'옆으로 누워서'},
 };
 for(const id in E) E[id].id=id;
+const YT={"legPress": {"ch": "쇠질인생", "t": "레그프레스 제대로 하는 5가지 체크리스트", "u": "https://www.youtube.com/watch?v=6JOEDP1k9_U", "tips": ["발을 발판 위쪽에 두면 둔근, 아래쪽이면 대퇴사두 위주", "무게를 줄이더라도 천천히 내리며 허벅지가 늘어나는 느낌", "손잡이를 당겨 엉덩이를 좌석에 고정, 끝에서 무릎은 살짝 굽힌 채"]}, "dbRDL": {"ch": "쇠질인생", "t": "딱 1분만에 마스터하는 루마니안 데드리프트", "u": "https://www.youtube.com/watch?v=krt0oA5xJmQ", "tips": ["골반을 물컵이라 생각하고 앞으로 기울여 쏟는 느낌으로 hinge", "체중은 뒤꿈치가 아니라 발 전체에", "올라올 때 상체보다 엉덩이를 먼저 앞으로 밀기"]}, "revLunge": {"ch": "쇠질인생", "t": "둔근 끝판왕 운동 리버스 런지", "u": "https://www.youtube.com/watch?v=SHd3ppT-MPI", "tips": ["앞 정강이는 수직, 엉덩이를 먼저 접는 hip hinge로 내려가기", "앞발 뒤꿈치로 밀며 엉덩이를 대각선 앞쪽으로 밀어 올리기", "상체를 살짝 숙이면 둔근 자극 증가"]}, "calfRaise": {"ch": "쇠질인생", "t": "종아리 제대로 키우는 카프레이즈 꿀팁", "u": "https://www.youtube.com/watch?v=3IcwhG0Ta9M", "tips": ["원판 위에 서서 뒤꿈치를 끝까지 내려 최대 stretch, 바닥에서 잠깐 정지", "튕기지 말고 발목을 앞으로 보내는 느낌으로 올라오기"]}, "chestPress": {"ch": "세계적으로 유명한 운동 정보", "t": "상황에 맞는 벤치프레스와 체스트프레스 운동 선택 방법", "u": "https://www.youtube.com/watch?v=j63_9VkomtI", "tips": ["수평 그립은 벤치프레스와 비슷한 근활성 패턴", "수직 그립은 근활성은 높지만 다룰 수 있는 무게가 낮음 → 고반복·자극 위주로"]}, "seatedRow": {"ch": "어썸블리스", "t": "완벽한 시티드로우(롱풀) 5STEPS", "u": "https://www.youtube.com/watch?v=lZxwCBmuKFU", "tips": ["등 운동은 등으로 먼저 버틴 다음 당기기", "허리는 고정, 움직이는 관절은 골반", "처음엔 가벼운 무게로 버티는 느낌부터 익히기"]}, "latPull": {"ch": "쇠질인생", "t": "30초만에 마스터하는 랫풀다운 ft. 팔꿈치 방향", "u": "https://www.youtube.com/watch?v=Gw85tXQbIxU", "tips": ["허벅지를 패드에 빈틈없이 밀착", "팔꿈치는 골반 방향으로 당기기", "당길 때 견갑을 아래로 모으고, 올라갈 때 으쓱하듯 견갑을 크게 움직이기"]}, "ohPress": {"ch": "쇠질인생", "t": "어깨 부상 예방하는 덤벨숄더프레스 셋업 노하우", "u": "https://www.youtube.com/watch?v=26_Pz6iMZ1s", "tips": ["벤치는 최고 각도에서 1–2칸 낮추기", "팔꿈치를 옆으로 완전히 벌리지 말고 몸 가까이 — 회전근개 보호", "최상단에서 손목이 어깨 바로 위"]}, "chinUp": {"ch": "세계적으로 유명한 운동 정보", "t": "초보자를 위한 턱걸이 가이드", "u": "https://www.youtube.com/watch?v=50MQXdDOiKQ", "tips": ["턱걸이는 처음부터 체중 전체를 드는 운동 → 부하를 줄인 단계부터", "바 높이로 난이도를 조절하는 inverted row → 강한 밴드 보조 순으로 진행", "각 단계를 3세트 할 수 있으면 다음 단계로"]}, "dips": {"ch": "바벨라토르", "t": "딥스 왕초보 가이드", "u": "https://www.youtube.com/watch?v=XTCWtPupQW8", "tips": ["팔을 편 상태에서 어깨부터 안정화", "처음엔 한 발을 바닥에 대고 연습 → negative dips", "어깨 보호를 위해 팔꿈치 90°보다 깊게 내려가지 않기"]}, "rearDelt": {"ch": "세계적으로 유명한 운동 정보", "t": "후면 삼각근 불태우는 기막힌 운동", "u": "https://www.youtube.com/watch?v=z_4sYoGNVJ0", "tips": ["초보자는 날개뼈를 모으는 승모근·능형근이 대신 일하기 쉬움", "날개뼈는 고정하고 팔을 옆으로 벌리는(수평 외전) 데 집중"]}, "pushUp": {"ch": "바벨라토르", "t": "팔굽혀펴기의 정석", "u": "https://www.youtube.com/watch?v=-_DUjHxgmWk", "tips": ["손은 어깨보다 약간 넓게, 팔꿈치는 몸통에서 약 45°", "손가락은 정면, 상완을 바깥으로 돌려(외회전) 어깨 고정", "허리 꺼짐·엉덩이 솟음 없이 복근·둔근 수축, 반동 없이 full range"]}, "gluteBridge": {"ch": "쇠질인생", "t": "장시간 앉아있는 직장인 필수 운동 힙 브릿지", "u": "https://www.youtube.com/watch?v=q99oJ7YljPo", "tips": ["꼬리뼈를 말아 골반 후방경사 만들기", "어깨–엉덩이–무릎 일직선", "정점에서 2초 정지"]}};
+for(const id in YT)if(E[id])E[id].yt=YT[id];
 const ZONE={gym:{lab:'기구존',c:'--gym'},cardio:{lab:'유산소존',c:'--cardio'},mat:{lab:'맨몸존',c:'--mat'}};
 
 /* ---------- program ---------- */
@@ -745,11 +750,11 @@ function openEx(id,fromPrev){
    ${e.note?`<div class="muted" style="font-size:12.5px">${e.note}</div>`:''}
    ${e.wt&&!e.wt.unit?`<label class="f" for="wt">현재 무게 (kg) — 운동 중 −/+ ${e.wt.step}kg 단위<input id="wt" type="number" inputmode="decimal" step="0.5" value="${weights[id]??''}" placeholder="처음이면 예시 ${e.wt.def}kg부터 가볍게"></label>`:''}
    <div class="eyebrow">자세 포인트</div><ul class="tight">${e.cue.map(c=>`<li>${c}</li>`).join('')}</ul>
-   ${e.yt?`<div class="eyebrow">구독 채널 팁</div><ul class="tight">${e.yt.map(t=>`<li>${t}</li>`).join('')}</ul>`:''}
+   ${e.yt?`<div class="ytbox"><div class="eyebrow">구독 채널 팁 · ${e.yt.ch}</div><ul class="tight">${e.yt.tips.map(t=>`<li>${t}</li>`).join('')}</ul><a href="${e.yt.u}" target="_blank" rel="noopener" class="muted" style="font-size:12.5px">출처: ${e.yt.ch} 「${e.yt.t}」 ↗</a></div>`:''}
    <div class="eyebrow">Target</div><div>${e.mus}</div>
    <div class="eyebrow">대체 동작</div><div>${e.alt}</div>
    ${e.img?'<div class="muted" style="font-size:12px">Illustration: Everkinetic, CC BY-SA 4.0</div>':''}
-   <a class="btn ghost" href="${yt}" target="_blank" rel="noopener">YouTube에서 영상 보기 ↗</a>`;
+   <a class="btn ghost" href="${e.yt?e.yt.u:yt}" target="_blank" rel="noopener">${e.yt?e.yt.ch+' 영상 보기':'YouTube에서 영상 보기'} ↗</a>`;
   openSheet();
   animate($('shFig'),e);
   const wt=$('wt');if(wt)wt.addEventListener('change',()=>{weights[id]=wt.value===''?null:+wt.value;S.set('w',weights);});
@@ -805,6 +810,7 @@ function showSeg(){
   $('pHr').innerHTML=isW?`<div><b>${lo}–${hi}</b>목표 bpm</div><div><b>${KIND[s.kind].rpe.split(' · ')[0]}</b>${KIND[s.kind].rpe.split(' · ')[1]||'자각강도'}</div>`
     :`<div><b>&lt; ${hi}</b>회복 목표 bpm</div><div style="max-width:220px">안 떨어지면 +15초</div>`;
   $('pCue').textContent=shown?shown.cue[0]:'';
+  if(shown&&shown.yt){const tips=shown.yt.tips;$('pYt').hidden=false;$('pYt').textContent=`${shown.yt.ch} · ${tips[(showSegW.r||0)%tips.length]}`;}else $('pYt').hidden=true;
   const nn=isW&&nx?E[nx.ex]:null;
   $('pNext').textContent=nn&&nx!==s?'다음: '+nn.n+(nx.zone!==s.zone?` (${ZONE[nx.zone].lab})`:''):'';
   P_.lastBeep=99;updTime();
