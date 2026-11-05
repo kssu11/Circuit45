@@ -803,6 +803,7 @@ function buzz(p){try{navigator.vibrate&&navigator.vibrate(p);}catch(e){}}
 let wl=null;async function wake(on){try{if(on&&navigator.wakeLock){wl=await navigator.wakeLock.request('screen');}else if(wl){await wl.release();wl=null;}}catch(e){}}
 
 /* ---------- live heart rate (BLE Heart Rate Service 0x180D) ---------- */
+const HRHELP=`<ol class="tight"><li><b>같은 폰의 다른 앱 연결 끊기</b> — CoospoRide/Samsung Health 등에서 스트랩 연결 해제. Android 설정 → 연결 → 블루투스에 H808S가 '연결됨'이면 해제 (한 폰에서는 앱 하나만 연결 가능)</li><li>스트랩을 착용하고 전극을 살짝 적시기 → LED가 깜빡이면 신호를 내보내는 중</li><li>폰의 Bluetooth와 <b>위치</b>가 켜져 있어야 검색됨</li><li>Chrome(또는 Chrome에서 설치한 앱)으로 열었는지 확인</li><li>다시 <b>심박계 연결</b> → 목록에서 H808S 선택</li></ol><div class="muted" style="font-size:13px;margin-top:8px">운동 후 CoospoRide 기록이 필요하면, Circuit 45 연결을 끊은 뒤 다시 연결하면 됩니다.</div>`;
 const HR={dev:null,bpm:null,last:0,bat:null,samples:[],tries:0,lastS:-1};
 function hrMsg(t){$('hrTxt').textContent=t;}
 function hrUI(){
@@ -815,9 +816,9 @@ function hrUI(){
 async function hrConnect(){
   if(!navigator.bluetooth){openInfo('Bluetooth 연결 불가','이 브라우저는 Web Bluetooth를 지원하지 않습니다. 갤럭시에서는 <b>Chrome</b>으로 열거나, Chrome에서 설치한 앱 아이콘으로 실행하세요. (삼성 인터넷은 지원하지 않을 수 있습니다)');return;}
   try{
-    const d=await navigator.bluetooth.requestDevice({filters:[{services:['heart_rate']}],optionalServices:['battery_service']});
+    const d=await navigator.bluetooth.requestDevice({filters:[{services:['heart_rate']},{namePrefix:'H808'},{namePrefix:'COOSPO'},{namePrefix:'Coospo'},{namePrefix:'HW'}],optionalServices:['heart_rate','battery_service']});
     hrAttach(d);await hrStart();
-  }catch(e){if(e&&e.name==='NotFoundError')return;openInfo('연결 실패',`${e&&e.message?e.message:e}<br><br>스트랩을 몸에 착용(전극 살짝 적시기)했는지, 폰 Bluetooth·위치가 켜져 있는지 확인하세요. H808S는 동시 연결 2개까지라 다른 앱 2개가 이미 연결 중이면 하나를 끊어주세요.`);}
+  }catch(e){if(e&&e.name==='NotFoundError'){openInfo('심박계가 목록에 없나요?',HRHELP);return;}openInfo('연결 실패',`${e&&e.message?e.message:e}<br><br>스트랩을 몸에 착용(전극 살짝 적시기)했는지, 폰 Bluetooth·위치가 켜져 있는지 확인하세요. H808S는 동시 연결 2개까지라 다른 앱 2개가 이미 연결 중이면 하나를 끊어주세요.`);}
 }
 function hrAttach(d){if(HR.dev===d)return;HR.dev=d;d.addEventListener('gattserverdisconnected',()=>{HR.bpm=null;hrUI();hrLive();hrRetry();});}
 async function hrStart(){
