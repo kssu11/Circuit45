@@ -162,6 +162,22 @@ table.log th,table.log td{text-align:left;padding:7px 6px;border-bottom:1px soli
 .p-hr{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
 .p-hr div{background:rgba(0,0,0,.2);border-radius:10px;padding:5px 12px;font-size:13px}
 .p-hr b{font:700 21px var(--display);font-variant-numeric:tabular-nums;display:block}
+.hrbtn{white-space:nowrap;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:6px 12px;font:600 13px var(--body);cursor:pointer;display:inline-flex;gap:6px;align-items:center}
+.hrbtn .hd{width:9px;height:9px;border-radius:50%;background:var(--muted)}
+.hrbtn.on .hd{background:#E0413A;animation:pulse 1s infinite}
+.hrbtn.on b{font:700 17px var(--display);font-variant-numeric:tabular-nums}
+@keyframes pulse{50%{opacity:.35}}
+@media (prefers-reduced-motion: reduce){.hrbtn.on .hd{animation:none}}
+.p-hr .live{min-width:96px;transition:background .3s,color .3s}
+.p-hr .live b{font-size:30px}
+.p-hr .live.in{background:#fff;color:#13203A}
+.p-hr .live.hi{background:#F4B740;color:#13203A}
+.p-hr .live.max{background:#E0413A;color:#fff}
+.p-hr .live.lo{background:rgba(255,255,255,.12)}
+.p-hr .live.off{opacity:.75}
+.hrchart{width:100%;height:auto;background:var(--bg);border-radius:10px}
+.zbar{display:flex;height:22px;border-radius:6px;overflow:hidden;font-size:11px;color:#fff;font-weight:700}
+.zbar i{display:flex;align-items:center;justify-content:center;font-style:normal;min-width:0;overflow:hidden}
 .p-cue{font-size:14px;opacity:.92;max-width:460px}
 .p-next{font-size:14px;opacity:.85}
 .p-ctl{display:grid;grid-template-columns:1fr 1.4fr 1fr 1fr;gap:8px}
@@ -181,6 +197,7 @@ table.log th,table.log td{text-align:left;padding:7px 6px;border-bottom:1px soli
     </div>
     <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
       <button class="btn sm" id="installBtn" hidden>앱 설치</button>
+      <button class="hrbtn" id="hrBtn"><span class="hd"></span><span id="hrTxt">심박계 연결</span></button>
       <div class="muted num" id="hdrWeek" style="font-size:20px;font-weight:600"></div>
     </div>
   </header>
@@ -217,7 +234,7 @@ table.log th,table.log td{text-align:left;padding:7px 6px;border-bottom:1px soli
           <label style="display:flex;gap:6px;align-items:center;font-size:14px"><input id="voice" type="checkbox" style="width:auto"> 음성 안내</label>
           <div class="muted" style="font-size:13px">HRmax(Tanaka) <b class="num" id="hrmax" style="font-size:17px"></b> · Karvonen HRR 기준</div>
           <div class="zones" id="zones"></div>
-          <div class="muted" style="font-size:12.5px">Fit3 손목 optical HR은 interval 중 10–20초 늦게 따라옵니다. 30초 sprint에서는 RPE를 함께 보세요.</div>
+          <div class="muted" style="font-size:12.5px">가슴 스트랩(Coospo H808S 등)을 상단 <b>심박계 연결</b>로 연결하면 운동 화면에 실시간 심박·구간 경고가 뜹니다. Fit3 손목 HR은 interval에서 10–20초 늦게 따라옵니다.</div>
         </div>
       </details>
     </div>
@@ -585,7 +602,7 @@ let tennis=new Set(S.get('tennis',[]));
 const weights=S.get('w',{});
 const logs=S.get('logs',[]);
 function week(){if(+st.wk)return +st.wk;const d=Math.floor((parse(today())-parse(st.start))/864e5);return (Math.floor(Math.max(0,d)/7)%4)+1;}
-const hrmax=()=>Math.round(208-0.7*st.age);
+const hrmax=()=>st.hrmx?+st.hrmx:Math.round(208-0.7*st.age);
 function bpm(kind){const k=KIND[kind];let [lo,hi]=k.hrr;if(kind==='hiit'&&week()===1)hi=.85;const mx=hrmax(),r=st.rhr;return [Math.round(r+lo*(mx-r)),Math.round(r+hi*(mx-r))];}
 function fitZone(b){const p=b/hrmax();return Math.max(1,Math.min(5,Math.floor((p-.5)/.1)+1));}
 const activeDays=()=>DAYS.slice(0,+st.n);
@@ -687,7 +704,7 @@ function recoHTML(rc,isToday){
 function renderSettings(){
   $('age').value=st.age;$('rhr').value=st.rhr;$('wk').value=st.wk;$('voice').checked=!!st.voice;$('tgt').value=st.n;
   $('exampleTag').hidden=!!st.custom;
-  $('hrmax').textContent=hrmax();
+  $('hrmax').textContent=hrmax()+(st.hrmx?' (측정값)':'');
   const w=week();$('hdrWeek').textContent='WEEK '+w;
   $('wk').options[0].text='자동 ('+w+'주차)';
   $('zones').innerHTML=['warm','str','core','hiit'].map(k=>{const [lo,hi]=bpm(k);return `<div class="zone" style="background:var(${KIND[k].c})"><span>${KIND[k].lab} · ${KIND[k].rpe}</span><b>${lo}–${hi}</b><span>bpm · Fit3 zone ${fitZone(lo)}–${fitZone(hi)}</span></div>`;}).join('');
@@ -785,12 +802,75 @@ function say(t){if(!st.voice)return;try{speechSynthesis.cancel();const u=new Spe
 function buzz(p){try{navigator.vibrate&&navigator.vibrate(p);}catch(e){}}
 let wl=null;async function wake(on){try{if(on&&navigator.wakeLock){wl=await navigator.wakeLock.request('screen');}else if(wl){await wl.release();wl=null;}}catch(e){}}
 
+/* ---------- live heart rate (BLE Heart Rate Service 0x180D) ---------- */
+const HR={dev:null,bpm:null,last:0,bat:null,samples:[],tries:0,lastS:-1};
+function hrMsg(t){$('hrTxt').textContent=t;}
+function hrUI(){
+  const b=$('hrBtn'),on=HR.bpm!=null&&Date.now()-HR.last<5000;
+  b.classList.toggle('on',on);
+  if(on)$('hrTxt').innerHTML=`<b>${HR.bpm}</b> bpm`;
+  else if(HR.dev)hrMsg(HR.dev.gatt.connected?'신호 대기…':'다시 연결 중…');
+  else hrMsg('심박계 연결');
+}
+async function hrConnect(){
+  if(!navigator.bluetooth){openInfo('Bluetooth 연결 불가','이 브라우저는 Web Bluetooth를 지원하지 않습니다. 갤럭시에서는 <b>Chrome</b>으로 열거나, Chrome에서 설치한 앱 아이콘으로 실행하세요. (삼성 인터넷은 지원하지 않을 수 있습니다)');return;}
+  try{
+    const d=await navigator.bluetooth.requestDevice({filters:[{services:['heart_rate']}],optionalServices:['battery_service']});
+    hrAttach(d);await hrStart();
+  }catch(e){if(e&&e.name==='NotFoundError')return;openInfo('연결 실패',`${e&&e.message?e.message:e}<br><br>스트랩을 몸에 착용(전극 살짝 적시기)했는지, 폰 Bluetooth·위치가 켜져 있는지 확인하세요. H808S는 동시 연결 2개까지라 다른 앱 2개가 이미 연결 중이면 하나를 끊어주세요.`);}
+}
+function hrAttach(d){if(HR.dev===d)return;HR.dev=d;d.addEventListener('gattserverdisconnected',()=>{HR.bpm=null;hrUI();hrLive();hrRetry();});}
+async function hrStart(){
+  hrMsg('연결 중…');
+  const srv=await HR.dev.gatt.connect();
+  const ch=await (await srv.getPrimaryService('heart_rate')).getCharacteristic('heart_rate_measurement');
+  ch.addEventListener('characteristicvaluechanged',onHR);
+  await ch.startNotifications();HR.tries=0;
+  try{const bl=await (await srv.getPrimaryService('battery_service')).getCharacteristic('battery_level');HR.bat=(await bl.readValue()).getUint8(0);}catch(e){}
+  hrUI();
+}
+function hrRetry(){if(!HR.dev||HR.tries>=8)return;HR.tries++;setTimeout(()=>{if(HR.dev&&!HR.dev.gatt.connected)hrStart().catch(()=>hrRetry());},Math.min(15000,1500*HR.tries));}
+function onHR(e){
+  const v=e.target.value,f=v.getUint8(0);
+  const bpm=(f&1)?v.getUint16(1,true):v.getUint8(1);
+  const contactOff=(f&6)===4; // sensor contact supported but not detected
+  if(!bpm||contactOff){HR.bpm=null;hrUI();hrLive(true);return;}
+  HR.bpm=bpm;HR.last=Date.now();
+  if(P_.run){const t=Math.floor(P_.elapsed/1000);if(t!==HR.lastS){HR.lastS=t;const sg=P_.segs[P_.i];HR.samples.push([t,bpm,sg.type==='work'?sg.kind:'rest']);}hrCoach();}
+  hrUI();hrLive();
+}
+setInterval(()=>{if(HR.bpm!=null&&Date.now()-HR.last>5000){HR.bpm=null;hrUI();hrLive();}},2000);
+function hrState(b,kind){const [lo,hi]=bpm(kind);if(b>=0.95*hrmax())return 'max';if(b>hi)return 'hi';if(b<lo&&kind!=='rest')return 'lo';return 'in';}
+function hrLive(noContact){
+  const el=$('pLive');if(!el||$('player').hidden)return;
+  const s=P_.segs[P_.i];const kind=s.type==='work'?s.kind:'rest';
+  if(HR.bpm==null){el.className='live off';el.innerHTML=`<b>—</b>${noContact?'스트랩 접촉 확인':(HR.dev?'신호 대기':'심박계 없음')}`;return;}
+  const stt=hrState(HR.bpm,kind);
+  const lab={in:kind==='rest'?'회복 중':'목표 구간',hi:kind==='rest'?'회복 중 ↓':'높음 — 페이스 ↓',max:'최대 근접!',lo:'낮음 — 조금 더'}[stt];
+  el.className='live '+(kind==='rest'&&stt!=='max'?'lo':stt);el.innerHTML=`<b>${HR.bpm}</b>${lab}`;
+}
+function hrCoach(){
+  const s=P_.segs[P_.i];if(!s||s.type!=='work')return;
+  const into=(P_.elapsed-P_.segT0)/1000,stt=hrState(HR.bpm,s.kind),c=P_.cued;
+  if(stt==='max'&&!c.max){c.max=1;buzz([200,100,200]);say('최대 심박에 가깝습니다. 속도를 낮추세요');return;}
+  if(stt==='hi'){c.hiN=(c.hiN||0)+1;if(c.hiN>=12&&!c.hi&&s.kind!=='hiit'){c.hi=1;buzz(150);say('심박이 높아요. 템포를 유지하며 호흡하세요');}if(c.hiN>=15&&!c.hi&&s.kind==='hiit'){c.hi=1;buzz(150);say('목표보다 높아요. 조금만 낮추세요');}}else c.hiN=0;
+  if(stt==='lo'&&s.kind==='hiit'&&into>20&&!c.lo){c.lo=1;say('조금 더 올려도 됩니다');}
+}
+function openInfo(t,html){$('sheetBody').innerHTML=`<div class="row" style="justify-content:space-between"><h2>${t}</h2><button class="btn sm ghost" data-close>닫기</button></div><div style="font-size:14.5px">${html}</div>`;openSheet();}
+$('hrBtn').onclick=()=>{
+  if(HR.dev&&HR.dev.gatt.connected){openInfo('심박계',`<b>${HR.dev.name||'Heart rate sensor'}</b> 연결됨${HR.bat!=null?` · 배터리 ${HR.bat}%`:''}<br><br>운동 중 화면에 실시간 심박과 목표 구간 상태가 표시되고, 기록에 평균·최대·구간별 시간이 자동 저장됩니다.<br><br><button class="btn ghost" id="hrOff">연결 끊기</button>`);$('hrOff').onclick=()=>{const d=HR.dev;HR.dev=null;HR.bpm=null;try{d.gatt.disconnect();}catch(e){}hrUI();closeSheet();};return;}
+  if(HR.dev){hrStart().catch(()=>hrConnect());return;}
+  hrConnect();
+};
+// reconnect a previously allowed sensor without the chooser, where the browser supports it
+(async()=>{try{if(navigator.bluetooth&&navigator.bluetooth.getDevices){const ds=await navigator.bluetooth.getDevices();if(ds.length){hrAttach(ds[0]);hrMsg('다시 연결 중…');hrStart().catch(()=>{hrMsg('심박계 연결');});}}}catch(e){}})();
+
 /* ---------- player ---------- */
 let P_={segs:[],i:0,rem:0,run:false,last:0,day:null,elapsed:0,timer:null,anim:null,lastBeep:99,startW:{}};
 function lastLogW(id){for(const l of logs){if(l.w&&l.w[id]!=null)return l.w[id];}return null;}
 function startDay(id){
   const d=DAYS.find(x=>x.id===id);P_.day=d;P_.segs=build(d);P_.i=0;P_.rem=P_.segs[0].dur*1000;P_.run=false;P_.elapsed=0;
-  P_.startW={};P_.segs.forEach(s=>{if(s.type==='work'&&E[s.ex].wt)P_.startW[s.ex]=wOf(s.ex);});
+  P_.startW={};HR.samples=[];P_.segs.forEach(s=>{if(s.type==='work'&&E[s.ex].wt)P_.startW[s.ex]=wOf(s.ex);});
   $('player').hidden=false;showSeg();$('pPlay').textContent='시작';
 }
 function nextWork(i){for(let j=i+1;j<P_.segs.length;j++)if(P_.segs[j].type==='work')return P_.segs[j];return null;}
@@ -811,8 +891,10 @@ function showSeg(){
   $('pTempo').textContent=shown&&shown.tt?'템포 · '+shown.tt:'';
   showWt(shown);
   const [lo,hi]=bpm(isW?s.kind:'rest');
-  $('pHr').innerHTML=isW?`<div><b>${lo}–${hi}</b>목표 bpm</div><div><b>${KIND[s.kind].rpe.split(' · ')[0]}</b>${KIND[s.kind].rpe.split(' · ')[1]||'자각강도'}</div>`
-    :`<div><b>&lt; ${hi}</b>회복 목표 bpm</div><div style="max-width:220px">안 떨어지면 +15초</div>`;
+  const live=`<div class="live off" id="pLive"><b>—</b>${HR.dev?'연결 중':'심박계 없음'}</div>`;
+  $('pHr').innerHTML=isW?`${live}<div><b>${lo}–${hi}</b>목표 bpm</div><div><b>${KIND[s.kind].rpe.split(' · ')[0]}</b>${KIND[s.kind].rpe.split(' · ')[1]||'자각강도'}</div>`
+    :`${live}<div><b>&lt; ${hi}</b>회복 목표 bpm</div><div style="max-width:200px">안 떨어지면 +15초</div>`;
+  P_.segT0=P_.elapsed;P_.cued={};hrLive();
   $('pCue').textContent=shown?shown.cue[0]:'';
   if(shown&&shown.yt){const tips=shown.yt.tips;$('pYt').hidden=false;$('pYt').textContent=`${shown.yt.ch} · ${tips[(showSegW.r||0)%tips.length]}`;}else $('pYt').hidden=true;
   const nn=isW&&nx?E[nx.ex]:null;
@@ -865,11 +947,11 @@ document.addEventListener('visibilitychange',()=>{if(document.visibilityState===
 
 /* ---------- logging ---------- */
 function openLogForm(min){
-  const d=P_.day;const wIds=Object.keys(P_.startW).filter(id=>!E[id].wt.unit);
+  const d=P_.day;const hs=hrSummary(HR.samples);const wIds=Object.keys(P_.startW).filter(id=>!E[id].wt.unit);
   $('sheetBody').innerHTML=`<h2>Day ${d.id} 완료 · ${min}분</h2>
-  <div class="muted" style="font-size:13px">Samsung Health에서 이번 운동의 평균·최대 심박을 확인해 입력하세요.</div>
+  ${hs?hrSummaryHTML(hs):'<div class="muted" style="font-size:13px">심박계 기록이 없으면 Samsung Health에서 평균·최대 심박을 확인해 입력하세요.</div>'}
   <label class="f" for="lgRpe">세션 RPE (0–10, 전체 힘든 정도) <input id="lgRpe" type="range" min="0" max="10" step="1" value="7"><b class="num" id="lgRpeV" style="font-size:22px">7</b></label>
-  <div class="row"><label class="f" for="lgAvg">평균 HR<input id="lgAvg" type="number" inputmode="numeric"></label><label class="f" for="lgMax">최대 HR<input id="lgMax" type="number" inputmode="numeric"></label></div>
+  <div class="row"><label class="f" for="lgAvg">평균 HR<input id="lgAvg" type="number" inputmode="numeric" value="${hs?hs.avg:''}"></label><label class="f" for="lgMax">최대 HR<input id="lgMax" type="number" inputmode="numeric" value="${hs?hs.max:''}"></label></div>
   ${wIds.length?`<div class="eyebrow">다음 세션 무게 (RPE에 따라 자동 제안 · 직접 변경 가능)</div><div id="nxW">${wIds.map(id=>`<div class="wtrow"><span>${E[id].n}<br><span class="muted num" style="font-size:15px">오늘 ${wOf(id)!=null?wOf(id)+' kg':'미설정'}</span></span><div class="seg3" data-w="${id}"><button data-v="-1">− ${E[id].wt.step}</button><button data-v="0">유지</button><button data-v="1">+ ${E[id].wt.step}</button></div></div>`).join('')}</div>`:''}
   <label class="f" for="lgNote">메모 (통증·cramp·대기한 기구)<textarea id="lgNote" rows="2"></textarea></label>
   <div class="row"><button class="btn" id="lgSave">저장</button><button class="btn ghost" id="lgSkip">건너뛰기</button></div>`;
@@ -878,12 +960,36 @@ function openLogForm(min){
   $('lgRpe').oninput=()=>{$('lgRpeV').textContent=$('lgRpe').value;setSug();};setSug();
   document.querySelectorAll('#nxW .seg3').forEach(g=>g.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;g.dataset.touched=1;g.querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===b));}));
   $('lgSkip').onclick=()=>{sheetStack=[];closeSheet();};
+  const hb=$('hrmxUp');if(hb)hb.onclick=()=>{st.hrmx=hs.max;S.set('st',st);renderSettings();hb.textContent=`HRmax ${hs.max}로 변경됨`;hb.disabled=true;};
   $('lgSave').onclick=()=>{
     const w={};Object.keys(P_.startW).forEach(id=>{if(wOf(id)!=null)w[id]=wOf(id);});
-    logs.unshift({date:today(),day:d.id,wk:week(),min,rpe:+$('lgRpe').value,avg:+$('lgAvg').value||null,max:+$('lgMax').value||null,note:$('lgNote').value.trim(),w});
+    logs.unshift({date:today(),day:d.id,wk:week(),min,rpe:+$('lgRpe').value,avg:+$('lgAvg').value||null,max:+$('lgMax').value||null,note:$('lgNote').value.trim(),w,hr:hs?{avg:hs.avg,max:hs.max,z:hs.z,tin:hs.tin,s5:hs.s5}:null});
     document.querySelectorAll('#nxW .seg3').forEach(g=>{const b=g.querySelector('[aria-pressed="true"]');const v=b?+b.dataset.v:0;const id=g.dataset.w;if(v&&wOf(id)!=null){weights[id]=Math.max(0,+(wOf(id)+v*E[id].wt.step).toFixed(1));}});
     S.set('w',weights);S.set('logs',logs);sheetStack=[];closeSheet();renderCal();document.querySelector('nav.tabs button[data-v="log"]').click();
   };
+}
+function hrSummary(sm){
+  if(!sm||sm.length<60)return null;
+  const b=sm.map(x=>x[1]);const avg=Math.round(b.reduce((a,x)=>a+x,0)/b.length),max=Math.max(...b);
+  const mx=hrmax(),z=[0,0,0,0,0];b.forEach(v=>{const p=v/mx;const i=p<.6?0:p<.7?1:p<.8?2:p<.9?3:4;z[i]++;});
+  const work=sm.filter(x=>x[2]!=='rest'&&x[2]!=='warm'&&x[2]!=='cool');
+  const tin=work.length?Math.round(100*work.filter(x=>{const [lo,hi]=bpm(x[2]);return x[1]>=lo&&x[1]<=hi;}).length/work.length):null;
+  const s5=[];for(let i=0;i<sm.length;i+=5)s5.push(sm[i][1]);
+  return {avg,max,z:z.map(n=>+(n/60).toFixed(1)),tin,s5,n:sm.length};
+}
+const ZC=['#8FA3BF','#3B86D6','#24936A','#F08A24','#E0413A'];
+function hrChartSVG(s5){
+  if(!s5||s5.length<3)return '';const W=320,H=90,mx=hrmax(),lo=Math.min(...s5)-5,hi=Math.max(mx*.95,Math.max(...s5)+3);
+  const y=v=>(H-6-(v-lo)/(hi-lo)*(H-12)).toFixed(1),x=i=>(i/(s5.length-1)*W).toFixed(1);
+  const bands=[.6,.7,.8,.9].map((p,i)=>{const v=p*mx;return v>lo&&v<hi?`<line x1="0" x2="${W}" y1="${y(v)}" y2="${y(v)}" stroke="${ZC[i+1]}" stroke-width="1" stroke-dasharray="3 3" opacity=".7"/>`:'';}).join('');
+  const d=s5.map((v,i)=>`${i?'L':'M'}${x(i)} ${y(v)}`).join(' ');
+  return `<svg class="hrchart" viewBox="0 0 ${W} ${H}" role="img" aria-label="세션 심박 그래프">${bands}<path d="${d} L${W} ${H} L0 ${H} Z" fill="var(--accent-soft)"/><path d="${d}" fill="none" stroke="var(--accent)" stroke-width="2"/></svg>`;
+}
+function zbarHTML(z){const t=z.reduce((a,x)=>a+x,0)||1;return `<div class="zbar">${z.map((m,i)=>m>0?`<i style="width:${m/t*100}%;background:${ZC[i]}">${m/t>.09?'Z'+(i+1):''}</i>`:'').join('')}</div><div class="muted" style="font-size:12px">%HRmax 기준 Z1 &lt;60 · Z2 60–70 · Z3 70–80 · Z4 80–90 · Z5 ≥90<br>${z.map((m,i)=>`Z${i+1} ${m}분`).join(' · ')}</div>`;}
+function hrSummaryHTML(h){
+  return `<div class="eyebrow">심박계 기록 (자동)</div>${hrChartSVG(h.s5)}${zbarHTML(h.z)}
+   <div class="muted" style="font-size:13px">평균 <b class="num" style="font-size:17px;color:var(--ink)">${h.avg}</b> · 최대 <b class="num" style="font-size:17px;color:var(--ink)">${h.max}</b>${h.tin!=null?` · 운동 구간 중 목표 심박 유지 <b class="num" style="font-size:17px;color:var(--ink)">${h.tin}%</b>`:''}</div>
+   ${h.max>hrmax()?`<button class="btn sm ghost" id="hrmxUp">측정 최대 ${h.max}가 추정 HRmax ${hrmax()}보다 높음 → HRmax 업데이트</button>`:''}`;
 }
 function adviceFor(l){
   const mx=hrmax(),out=[];
@@ -891,6 +997,7 @@ function adviceFor(l){
   if(l.rpe>=9)out.push('세션 RPE 9 이상 → 무게 한 단계 ↓ 적용됨, 다음 같은 Day는 interval 1라운드 생략 고려');
   else if(l.rpe<=5)out.push('세션 RPE 5 이하 → 무게 한 단계 ↑ 적용됨');
   else out.push('적정 강도 (RPE 6–8) → 무게 유지 또는 소폭 증량');
+  if(l.hr&&l.hr.tin!=null){if(l.hr.tin<50)out.push(`운동 구간 중 목표 심박 유지 ${l.hr.tin}% → 휴식을 짧게 하거나 interval 속도 ↑ (심박이 목표보다 낮았다면)`);else out.push(`운동 구간 중 목표 심박 유지 ${l.hr.tin}% — 좋음`);}
   if(/쥐|cramp|경련/i.test(l.note||''))out.push('Cramp 기록 → 운동 전 식사·수분/전해질, calf/quad stretch 연장, 테니스 당일 interval 금지');
   return out;
 }
@@ -898,7 +1005,7 @@ function renderLog(){
   $('logTbl').innerHTML=logs.length?`<tr><th>날짜</th><th>Day</th><th>분</th><th>RPE</th><th>Avg/Max</th><th>메모</th><th></th></tr>`+logs.map((l,i)=>`<tr><td>${l.date.slice(5)}</td><td>${l.day}</td><td>${l.min}</td><td>${l.rpe}</td><td>${l.avg||'–'}/${l.max||'–'}</td><td>${(l.note||'').replace(/</g,'&lt;')}</td><td><button class="btn sm ghost" data-del="${i}">삭제</button></td></tr>`).join('')
    :`<tr><td class="muted">아직 기록이 없습니다. 이번 주 탭에서 오늘 추천 운동을 시작하세요.</td></tr>`;
   const l=logs[0];
-  $('advice').innerHTML=l?`<h3>다음 세션 조정 (최근: Day ${l.day})</h3><ul class="tight">${adviceFor(l).map(x=>`<li>${x}</li>`).join('')}</ul>`
+  $('advice').innerHTML=l?`<h3>다음 세션 조정 (최근: Day ${l.day})</h3>${l.hr?hrChartSVG(l.hr.s5)+zbarHTML(l.hr.z):''}<ul class="tight">${adviceFor(l).map(x=>`<li>${x}</li>`).join('')}</ul>`
    :`<h3>강도 조정 규칙</h3><ul class="tight"><li>RPE ≤6 → 다음 무게 한 단계 ↑</li><li>RPE ≥9 또는 최대 HR &gt; 95% HRmax → 한 단계 ↓</li></ul>`;
   const ids=Object.keys(E).filter(id=>E[id].wt&&!E[id].wt.unit&&used.has(id));
   $('wtList').innerHTML=ids.map(id=>`<div class="wtrow"><span>${E[id].n} <span class="muted" style="font-size:12px">${ZONE[E[id].zone].lab}</span></span><b class="num" style="font-size:18px">${wTxt(id)}</b></div>`).join('');
@@ -927,7 +1034,7 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
 
 /* ---------- init ---------- */
 renderSettings();renderCal();renderDays();bindInputs();
-window.__c45={build,DAYS,total,recommend,E};
+window.__c45={build,DAYS,total,recommend,E,HR,hrSummaryHTML,hrSummary};
 })();
 </script>
 </body>
