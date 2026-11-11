@@ -120,6 +120,7 @@ table.log th,table.log td{text-align:left;padding:7px 6px;border-bottom:1px soli
 /* sheets */
 .sheet{position:fixed;inset:0;background:rgba(8,12,22,.55);z-index:30;display:flex;align-items:flex-end;justify-content:center}
 .sheet>div{background:var(--surface);width:100%;max-width:560px;max-height:90%;overflow:auto;border-radius:18px 18px 0 0;padding:18px max(18px,env(safe-area-inset-right,0px)) calc(18px + env(safe-area-inset-bottom,0px)) max(18px,env(safe-area-inset-left,0px));display:flex;flex-direction:column;gap:10px}
+.sheet>div>*{flex-shrink:0}
 .sheet .bigfig{max-width:340px;width:100%;align-self:center;border-radius:12px}
 .sw{display:flex;justify-content:space-between;align-items:center;gap:10px;background:var(--bg);border-radius:10px;padding:10px 12px}
 .sw input{width:auto;transform:scale(1.4)}
@@ -259,7 +260,7 @@ table.log th,table.log td{text-align:left;padding:7px 6px;border-bottom:1px soli
   <section class="view" id="v-log" hidden>
     <div class="card">
       <h3>세션 기록</h3>
-      <div class="muted" style="font-size:13px">운동 종료 후 Samsung Health의 평균·최대 심박과 세션 RPE를 입력하면 다음 세션 무게·강도를 조정합니다. 기록은 이 폰에만 저장됩니다.</div>
+      <div class="muted" style="font-size:13px">운동 종료 후 Samsung Health의 운동 후 '몇 개 더 할 수 있었나'와 전체 느낌만 고르면 다음 세션 무게·강도가 자동 조정됩니다. 기록은 이 폰에만 저장됩니다.</div>
       <div class="tblwrap"><table class="log" id="logTbl"></table></div>
     </div>
     <div class="card" id="advice"></div>
@@ -283,6 +284,14 @@ table.log th,table.log td{text-align:left;padding:7px 6px;border-bottom:1px soli
         <li>모든 major muscle group을 주 2회 이상 → A–C 3회로 전신 2회 충족<span class="cite">[1]</span></li>
         <li>Hypertrophy는 muscle group당 주 ~10 sets, strength는 ~80% 1RM 2–3 sets<span class="cite">[1]</span></li>
         <li>Failure 훈련, machine vs free weight, 복잡한 periodization은 일반 성인 결과를 일관되게 바꾸지 않음 → 머신·덤벨 혼용, RIR 2–3<span class="cite">[1]</span></li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>강도 표시 — RPE 대신</h3>
+      <ul class="tight" style="font-size:14px">
+        <li><b>기구·덤벨: "몇 개 더 할 수 있나"</b> (Repetitions in Reserve) — 2–3개 남았을 때 멈춤. 숫자 척도보다 직관적이고 실제 남은 반복 수와 잘 맞음<span class="cite">[8]</span></li>
+        <li><b>유산소·맨몸: 말하기 테스트</b> — 편하게 대화(warm-up) · 짧은 문장(circuit) · 단어만(interval). 말이 불편해지는 시점이 ventilatory threshold 부근과 일치<span class="cite">[9]</span></li>
+        <li>여기에 가슴 스트랩 실시간 심박(HRR 구간)으로 객관적으로 확인</li>
       </ul>
     </div>
     <div class="card">
@@ -312,7 +321,7 @@ table.log th,table.log td{text-align:left;padding:7px 6px;border-bottom:1px soli
       <h3>4주 진행 규칙</h3>
       <ul class="tight" style="font-size:14px">
         <li>1주 적응: work −5초, rest +5초, interval 상한 85% HRR</li>
-        <li>2–3주 기본. 세션 RPE ≤6이면 다음엔 무게 한 단계 ↑, ≥9이면 ↓</li>
+        <li>2–3주 기본. 마지막 라운드에 3개 이상 여유 → 다음엔 무게 한 단계 ↑, 여유 0개 → ↓</li>
         <li>4주 deload: 기구·interval 블록 1라운드 감소</li>
       </ul>
     </div>
@@ -326,6 +335,8 @@ table.log th,table.log td{text-align:left;padding:7px 6px;border-bottom:1px soli
         <li>Schoenfeld BJ, Ogborn DI, Krieger JW. Effect of repetition duration during resistance training on muscle hypertrophy: a systematic review and meta-analysis. <i>Sports Med</i>. 2015;45(4):577–585.</li>
         <li>ACSM Position Stand. Progression models in resistance training for healthy adults. <i>Med Sci Sports Exerc</i>. 2009;41(3):687–708.</li>
         <li>Boren K, Conrey C, Le Coguic J, et al. Electromyographic analysis of gluteus medius and gluteus maximus during rehabilitation exercises. <i>Int J Sports Phys Ther</i>. 2011;6(3):206–223.</li>
+        <li>Zourdos MC, Klemp A, Dolan C, et al. Novel resistance training–specific rating of perceived exertion scale measuring repetitions in reserve. <i>J Strength Cond Res</i>. 2016;30(1):267–275.</li>
+        <li>Reed JL, Pipe AL. The talk test: a useful tool for prescribing and monitoring exercise intensity. <i>Curr Opin Cardiol</i>. 2014;29(5):475–480.</li>
         <li>운동 일러스트: Everkinetic open data (Greg Priday), CC BY-SA 4.0 — github.com/everkinetic/data. 크롭·크기·색 조정.</li>
       </ol>
     </div>
@@ -457,7 +468,7 @@ const E={
  // cardio zone
  bikeEasy:{n:'Bike — warm-up',k:'실내 자전거 (가볍게→보통)',zone:'cardio',eq:['bike'],hy:56,anchor:'hip',cx:44,tp:[.36,0,.36,0],tt:'85 RPM',
   a:P(-62,-5,95,45,95,-10,10,-8,12),b:P(-62,45,95,-5,95,-10,10,-8,12),
-  cue:['처음 2분 RPE 3 → 마지막 1분 RPE 5까지 저항 올리기','안장: 페달 최저점에서 knee 25–30° flexion'],mus:'Quadriceps, Gluteus maximus',alt:'Treadmill 빠르게 걷기'},
+  cue:['처음엔 편하게 대화 가능 → 마지막 1분은 숨이 조금 찰 때까지 저항 올리기','안장: 페달 최저점에서 knee 25–30° flexion'],mus:'Quadriceps, Gluteus maximus',alt:'Treadmill 빠르게 걷기'},
  bikeSprint:{n:'Bike sprint',k:'자전거 스프린트',zone:'cardio',eq:['bike'],hy:56,anchor:'hip',cx:44,tp:[.27,0,.27,0],tt:'110+ RPM',
   a:P(-50,-5,95,45,95,-12,12,-10,14),b:P(-50,45,95,-5,95,-12,12,-10,14),
   cue:['Work: 저항 중간 이상, 최대 RPM','Rest: 저항 낮추고 천천히 계속 돌리기 — 내리지 않기'],mus:'Quadriceps, Gluteus, cardiovascular',alt:'Treadmill sprint'},
@@ -591,9 +602,10 @@ const DAYS=[
    {name:'Tread intervals',zone:'cardio',kind:'hiit',rounds:6,work:30,rest:30,rr:30,restLabel:'5–6 km/h 걷기',items:['treadRun']},
    {name:'Court core',zone:'mat',kind:'core',rounds:3,work:30,rest:15,rr:30,items:['sidePlank','birdDog','bwLunge','mtClimber']},COOL]},
 ];
-const KIND={warm:{c:'--z-warm',lab:'Warm-up',hrr:[.30,.50],rpe:'RPE 3–5'},str:{c:'--z-str',lab:'Strength',hrr:[.50,.70],rpe:'RPE 7 · RIR 2–3'},
- hiit:{c:'--z-hiit',lab:'Interval',hrr:[.75,.90],rpe:'RPE 8–9'},core:{c:'--z-core',lab:'Circuit',hrr:[.60,.80],rpe:'RPE 7'},
- cool:{c:'--z-cool',lab:'Cool-down',hrr:[0,.40],rpe:'RPE 1–2'},rest:{c:'--z-rest',lab:'Rest',hrr:[0,.60],rpe:''}};
+// g = [big label, sub] — Talk test for cardio/circuit, reps-in-reserve for strength
+const KIND={warm:{c:'--z-warm',lab:'Warm-up',hrr:[.30,.50],g:['대화 가능','편하게 말할 수 있는 정도']},str:{c:'--z-str',lab:'Strength',hrr:[.50,.70],g:['2–3개 남기고','더 할 수 있을 때 멈춤']},
+ hiit:{c:'--z-hiit',lab:'Interval',hrr:[.75,.90],g:['단어만','문장으로 말하기 힘듦']},core:{c:'--z-core',lab:'Circuit',hrr:[.60,.80],g:['짧은 문장','숨이 차지만 말은 됨']},
+ cool:{c:'--z-cool',lab:'Cool-down',hrr:[0,.40],g:['편안','호흡 정리']},rest:{c:'--z-rest',lab:'Rest',hrr:[0,.60],g:['','']}};
 
 /* ---------- settings ---------- */
 const st=Object.assign({age:32,rhr:60,wk:0,voice:true,n:4,start:null,custom:false},S.get('st',{}));
@@ -692,7 +704,7 @@ function openDate(s){
   const rc=s>=t?recommend(s):null;
   $('sheetBody').innerHTML=`<div class="row" style="justify-content:space-between"><h2>${d.getMonth()+1}월 ${d.getDate()}일 (${DW[d.getDay()]})</h2><button class="btn sm ghost" data-close>닫기</button></div>
    <label class="sw" for="tenSw"><span><b>테니스 치는 날</b><br><span class="muted" style="font-size:12.5px">언제든 바꿀 수 있고, 추천에 바로 반영됩니다</span></span><input id="tenSw" type="checkbox" ${tennis.has(s)?'checked':''}></label>
-   ${ls.length?`<div class="eyebrow">한 운동</div>${ls.map(l=>`<div class="wtrow"><span><b>Day ${l.day}</b> · ${DAYS.find(x=>x.id===l.day)?.name||''} · ${l.min}분</span><span class="muted">RPE ${l.rpe}${l.avg?` · avg ${l.avg}`:''}</span></div>`).join('')}`:(s<t?'<div class="muted">기록 없음</div>':'')}
+   ${ls.length?`<div class="eyebrow">한 운동</div>${ls.map(l=>`<div class="wtrow"><span><b>Day ${l.day}</b> · ${DAYS.find(x=>x.id===l.day)?.name||''} · ${l.min}분</span><span class="muted">${FEEL[feelOf(l)]}${l.avg?` · avg ${l.avg}`:''}</span></div>`).join('')}`:(s<t?'<div class="muted">기록 없음</div>':'')}
    ${rc?`<div class="reco" id="dReco">${recoHTML(rc,s===t)}</div>`:''}`;
   openSheet();
   $('tenSw').onchange=(e)=>{if(e.target.checked)tennis.add(s);else tennis.delete(s);S.set('tennis',[...tennis]);renderCal();const r=s>=t?recommend(s):null;const box=$('dReco');if(box&&r)box.innerHTML=recoHTML(r,s===t);};
@@ -707,7 +719,7 @@ function renderSettings(){
   $('hrmax').textContent=hrmax()+(st.hrmx?' (측정값)':'');
   const w=week();$('hdrWeek').textContent='WEEK '+w;
   $('wk').options[0].text='자동 ('+w+'주차)';
-  $('zones').innerHTML=['warm','str','core','hiit'].map(k=>{const [lo,hi]=bpm(k);return `<div class="zone" style="background:var(${KIND[k].c})"><span>${KIND[k].lab} · ${KIND[k].rpe}</span><b>${lo}–${hi}</b><span>bpm · Fit3 zone ${fitZone(lo)}–${fitZone(hi)}</span></div>`;}).join('');
+  $('zones').innerHTML=['warm','str','core','hiit'].map(k=>{const [lo,hi]=bpm(k);return `<div class="zone" style="background:var(${KIND[k].c})"><span>${KIND[k].lab} · ${KIND[k].g[0]}</span><b>${lo}–${hi}</b><span>bpm · Fit3 zone ${fitZone(lo)}–${fitZone(hi)}</span></div>`;}).join('');
 }
 function renderDays(){
   $('days').innerHTML=DAYS.map(d=>{
@@ -893,7 +905,7 @@ function showSeg(){
   showWt(shown);
   const [lo,hi]=bpm(isW?s.kind:'rest');
   const live=`<div class="live off" id="pLive"><b>—</b>${HR.dev?'연결 중':'심박계 없음'}</div>`;
-  $('pHr').innerHTML=isW?`${live}<div><b>${lo}–${hi}</b>목표 bpm</div><div><b>${KIND[s.kind].rpe.split(' · ')[0]}</b>${KIND[s.kind].rpe.split(' · ')[1]||'자각강도'}</div>`
+  $('pHr').innerHTML=isW?`${live}<div><b>${lo}–${hi}</b>목표 bpm</div><div><b>${KIND[s.kind].g[0]}</b>${KIND[s.kind].g[1]}</div>`
     :`${live}<div><b>&lt; ${hi}</b>회복 목표 bpm</div><div style="max-width:200px">안 떨어지면 +15초</div>`;
   P_.segT0=P_.elapsed;P_.cued={};hrLive();
   $('pCue').textContent=shown?shown.cue[0]:'';
@@ -951,20 +963,23 @@ function openLogForm(min){
   const d=P_.day;const hs=hrSummary(HR.samples);const wIds=Object.keys(P_.startW).filter(id=>!E[id].wt.unit);
   $('sheetBody').innerHTML=`<h2>Day ${d.id} 완료 · ${min}분</h2>
   ${hs?hrSummaryHTML(hs):'<div class="muted" style="font-size:13px">심박계 기록이 없으면 Samsung Health에서 평균·최대 심박을 확인해 입력하세요.</div>'}
-  <label class="f" for="lgRpe">세션 RPE (0–10, 전체 힘든 정도) <input id="lgRpe" type="range" min="0" max="10" step="1" value="7"><b class="num" id="lgRpeV" style="font-size:22px">7</b></label>
+  <div class="eyebrow">오늘 전체 느낌</div><div class="seg3" id="lgFeel" style="align-self:flex-start"><button data-v="1">여유 있었다</button><button data-v="2" aria-pressed="true">딱 좋았다</button><button data-v="3">버거웠다</button></div>
   <div class="row"><label class="f" for="lgAvg">평균 HR<input id="lgAvg" type="number" inputmode="numeric" value="${hs?hs.avg:''}"></label><label class="f" for="lgMax">최대 HR<input id="lgMax" type="number" inputmode="numeric" value="${hs?hs.max:''}"></label></div>
-  ${wIds.length?`<div class="eyebrow">다음 세션 무게 (RPE에 따라 자동 제안 · 직접 변경 가능)</div><div id="nxW">${wIds.map(id=>`<div class="wtrow"><span>${E[id].n}<br><span class="muted num" style="font-size:15px">오늘 ${wOf(id)!=null?wOf(id)+' kg':'미설정'}</span></span><div class="seg3" data-w="${id}"><button data-v="-1">− ${E[id].wt.step}</button><button data-v="0">유지</button><button data-v="1">+ ${E[id].wt.step}</button></div></div>`).join('')}</div>`:''}
+  ${wIds.length?`<div class="eyebrow">마지막 라운드에서 몇 개 더 할 수 있었나요?</div><div class="muted" style="font-size:12.5px">답에 따라 다음 무게가 정해집니다 · 0개 → 한 단계 ↓ · 1–2개 → 유지 · 3–4개 → 한 단계 ↑ · 5개+ → 두 단계 ↑</div><div id="nxW">${wIds.map(id=>`<div class="wtrow" style="grid-template-columns:1fr"><span>${E[id].n} · <span class="muted num" style="font-size:15px">오늘 ${wOf(id)!=null?wOf(id)+' kg':'미설정'} → 다음 <b data-nx="${id}" style="color:var(--ink)"></b></span></span><div class="seg3" data-w="${id}"><button data-v="-1">0개</button><button data-v="0" aria-pressed="true">1–2개</button><button data-v="1">3–4개</button><button data-v="2">5개+</button></div></div>`).join('')}</div>`:''}
   <label class="f" for="lgNote">메모 (통증·cramp·대기한 기구)<textarea id="lgNote" rows="2"></textarea></label>
   <div class="row"><button class="btn" id="lgSave">저장</button><button class="btn ghost" id="lgSkip">건너뛰기</button></div>`;
   openSheet();
-  const setSug=()=>{const r=+$('lgRpe').value,v=r<=6?1:r>=9?-1:0;document.querySelectorAll('#nxW .seg3').forEach(g=>{if(g.dataset.touched)return;g.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',+b.dataset.v===v));});};
-  $('lgRpe').oninput=()=>{$('lgRpeV').textContent=$('lgRpe').value;setSug();};setSug();
-  document.querySelectorAll('#nxW .seg3').forEach(g=>g.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;g.dataset.touched=1;g.querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===b));}));
+  const nxOf=(id,v)=>{const w=wOf(id);return w==null?null:Math.max(0,+(w+v*E[id].wt.step).toFixed(1));};
+  const showNx=()=>document.querySelectorAll('#nxW .seg3').forEach(g=>{const b=g.querySelector('[aria-pressed="true"]');const v=b?+b.dataset.v:0;const n=nxOf(g.dataset.w,v);const el=document.querySelector(`[data-nx="${g.dataset.w}"]`);if(el)el.textContent=n==null?'—':`${n} kg`;});
+  const pick=(g,b)=>g.querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===b));
+  document.querySelectorAll('#nxW .seg3, #lgFeel').forEach(g=>g.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;pick(g,b);showNx();}));showNx();
   $('lgSkip').onclick=()=>{sheetStack=[];closeSheet();};
   const hb=$('hrmxUp');if(hb)hb.onclick=()=>{st.hrmx=hs.max;S.set('st',st);renderSettings();hb.textContent=`HRmax ${hs.max}로 변경됨`;hb.disabled=true;};
   $('lgSave').onclick=()=>{
     const w={};Object.keys(P_.startW).forEach(id=>{if(wOf(id)!=null)w[id]=wOf(id);});
-    logs.unshift({date:today(),day:d.id,wk:week(),min,rpe:+$('lgRpe').value,avg:+$('lgAvg').value||null,max:+$('lgMax').value||null,note:$('lgNote').value.trim(),w,hr:hs?{avg:hs.avg,max:hs.max,z:hs.z,tin:hs.tin,s5:hs.s5}:null});
+    const feel=+($('lgFeel').querySelector('[aria-pressed="true"]')?.dataset.v||2);const rir={};
+    document.querySelectorAll('#nxW .seg3').forEach(g=>{const b=g.querySelector('[aria-pressed="true"]');rir[g.dataset.w]=b?+b.dataset.v:0;});
+    logs.unshift({date:today(),day:d.id,wk:week(),min,feel,rir,rpe:[0,5,7,9][feel],avg:+$('lgAvg').value||null,max:+$('lgMax').value||null,note:$('lgNote').value.trim(),w,hr:hs?{avg:hs.avg,max:hs.max,z:hs.z,tin:hs.tin,s5:hs.s5}:null});
     document.querySelectorAll('#nxW .seg3').forEach(g=>{const b=g.querySelector('[aria-pressed="true"]');const v=b?+b.dataset.v:0;const id=g.dataset.w;if(v&&wOf(id)!=null){weights[id]=Math.max(0,+(wOf(id)+v*E[id].wt.step).toFixed(1));}});
     S.set('w',weights);S.set('logs',logs);sheetStack=[];closeSheet();renderCal();document.querySelector('nav.tabs button[data-v="log"]').click();
   };
@@ -992,22 +1007,27 @@ function hrSummaryHTML(h){
    <div class="muted" style="font-size:13px">평균 <b class="num" style="font-size:17px;color:var(--ink)">${h.avg}</b> · 최대 <b class="num" style="font-size:17px;color:var(--ink)">${h.max}</b>${h.tin!=null?` · 운동 구간 중 목표 심박 유지 <b class="num" style="font-size:17px;color:var(--ink)">${h.tin}%</b>`:''}</div>
    ${h.max>hrmax()?`<button class="btn sm ghost" id="hrmxUp">측정 최대 ${h.max}가 추정 HRmax ${hrmax()}보다 높음 → HRmax 업데이트</button>`:''}`;
 }
+const FEEL=['','여유','적당','버거움'];
+function feelOf(l){return l.feel||(l.rpe>=9?3:l.rpe<=5?1:2);}
 function adviceFor(l){
   const mx=hrmax(),out=[];
   if(l.max&&l.max>0.95*mx)out.push(`최대 HR ${l.max}가 HRmax의 95% 초과 → 다음 interval은 rest +5초 또는 속도 한 단계 ↓`);
-  if(l.rpe>=9)out.push('세션 RPE 9 이상 → 무게 한 단계 ↓ 적용됨, 다음 같은 Day는 interval 1라운드 생략 고려');
-  else if(l.rpe<=5)out.push('세션 RPE 5 이하 → 무게 한 단계 ↑ 적용됨');
-  else out.push('적정 강도 (RPE 6–8) → 무게 유지 또는 소폭 증량');
+  const f=feelOf(l);
+  if(f===3)out.push('버거웠음 → 다음 같은 Day는 interval·맨몸 블록 휴식 +5초, 필요하면 1라운드 생략');
+  else if(f===1)out.push('여유 있었음 → 다음엔 interval 속도·레벨 한 단계 ↑ 또는 휴식 −5초');
+  else out.push('딱 좋았음 → 그대로 유지');
+  if(l.rir){const up=[],dn=[];for(const id in l.rir){if(!E[id])continue;if(l.rir[id]>0)up.push(E[id].k);if(l.rir[id]<0)dn.push(E[id].k);}
+    if(up.length)out.push(`무게 ↑ 적용: ${up.join(', ')} (3개 이상 여유)`);if(dn.length)out.push(`무게 ↓ 적용: ${dn.join(', ')} (여유 0개)`);}
   if(l.hr&&l.hr.tin!=null){if(l.hr.tin<50)out.push(`운동 구간 중 목표 심박 유지 ${l.hr.tin}% → 휴식을 짧게 하거나 interval 속도 ↑ (심박이 목표보다 낮았다면)`);else out.push(`운동 구간 중 목표 심박 유지 ${l.hr.tin}% — 좋음`);}
   if(/쥐|cramp|경련/i.test(l.note||''))out.push('Cramp 기록 → 운동 전 식사·수분/전해질, calf/quad stretch 연장, 테니스 당일 interval 금지');
   return out;
 }
 function renderLog(){
-  $('logTbl').innerHTML=logs.length?`<tr><th>날짜</th><th>Day</th><th>분</th><th>RPE</th><th>Avg/Max</th><th>메모</th><th></th></tr>`+logs.map((l,i)=>`<tr><td>${l.date.slice(5)}</td><td>${l.day}</td><td>${l.min}</td><td>${l.rpe}</td><td>${l.avg||'–'}/${l.max||'–'}</td><td>${(l.note||'').replace(/</g,'&lt;')}</td><td><button class="btn sm ghost" data-del="${i}">삭제</button></td></tr>`).join('')
+  $('logTbl').innerHTML=logs.length?`<tr><th>날짜</th><th>Day</th><th>분</th><th>느낌</th><th>Avg/Max</th><th>메모</th><th></th></tr>`+logs.map((l,i)=>`<tr><td>${l.date.slice(5)}</td><td>${l.day}</td><td>${l.min}</td><td>${FEEL[feelOf(l)]}</td><td>${l.avg||'–'}/${l.max||'–'}</td><td>${(l.note||'').replace(/</g,'&lt;')}</td><td><button class="btn sm ghost" data-del="${i}">삭제</button></td></tr>`).join('')
    :`<tr><td class="muted">아직 기록이 없습니다. 이번 주 탭에서 오늘 추천 운동을 시작하세요.</td></tr>`;
   const l=logs[0];
   $('advice').innerHTML=l?`<h3>다음 세션 조정 (최근: Day ${l.day})</h3>${l.hr?hrChartSVG(l.hr.s5)+zbarHTML(l.hr.z):''}<ul class="tight">${adviceFor(l).map(x=>`<li>${x}</li>`).join('')}</ul>`
-   :`<h3>강도 조정 규칙</h3><ul class="tight"><li>RPE ≤6 → 다음 무게 한 단계 ↑</li><li>RPE ≥9 또는 최대 HR &gt; 95% HRmax → 한 단계 ↓</li></ul>`;
+   :`<h3>강도 조정 규칙</h3><ul class="tight"><li>기구·덤벨: 마지막 라운드 여유 3개 이상 → 무게 ↑, 0개 → ↓</li><li>유산소·맨몸: 말하기 테스트 + 실시간 심박 구간</li><li>최대 HR &gt; 95% HRmax → 다음 interval 강도 ↓</li></ul>`;
   const ids=Object.keys(E).filter(id=>E[id].wt&&!E[id].wt.unit&&used.has(id));
   $('wtList').innerHTML=ids.map(id=>`<div class="wtrow"><span>${E[id].n} <span class="muted" style="font-size:12px">${ZONE[E[id].zone].lab}</span></span><b class="num" style="font-size:18px">${wTxt(id)}</b></div>`).join('');
 }
